@@ -1,0 +1,13 @@
+name: 'Changed'
+
+on: [push, pull_request]
+
+jobs:
+  execute_test:
+    runs-on: ubuntu-latest
+
+   steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - run: git log --name-only --pretty="format:" ${{ github.event.before }}..${{ github.event.after }} | sort -u
