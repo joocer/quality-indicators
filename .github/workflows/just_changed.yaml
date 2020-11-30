@@ -6,7 +6,7 @@ jobs:
   execute_test:
     runs-on: ubuntu-latest
 
-   steps:
+    steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
