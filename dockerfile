@@ -8,6 +8,7 @@ RUN pip install --target=/app -r ./requirements.txt
 FROM gcr.io/distroless/python3-debian10
 
 COPY --from=builder /app /app
+COPY --from=builder /usr/local/lib/python3.5/site-packages/ /usr/lib/python3.5/.
 
 WORKDIR /app
 ENV PYTHONPATH /app
