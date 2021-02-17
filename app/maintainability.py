@@ -21,7 +21,7 @@ LIMIT = 65
 class MaintainabilityTest():
 
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
+        pass
 
     def test(self):
 
@@ -38,11 +38,11 @@ class MaintainabilityTest():
             maintainability_index = radon.metrics.mi_visit(code, True)
 
             if code.startswith('#no-maintain-checks'):
-                self.logger.info(F"{item:20} {maintainability_index:.2f} - skipped")
+                logging.info(F"{item:20} {maintainability_index:.2f} - skipped")
                 continue
-            
+
             if maintainability_index <= LIMIT:
                 all_okay = False
-                self.logger.info(F"{item:20} {maintainability_index:.2f} - below {LIMIT}")
+                logging.info(F"{item:20} {maintainability_index:.2f} - below {LIMIT}")
 
         return all_okay
