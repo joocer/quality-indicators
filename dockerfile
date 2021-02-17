@@ -3,7 +3,7 @@ ADD . /app
 WORKDIR /app
 
 RUN pip3 install --upgrade pip
-RUN pip install -r ./requirements.txt
+RUN pip install --target=/app -r ./requirements.txt
 
 FROM gcr.io/distroless/python3-debian10
 
