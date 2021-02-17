@@ -1,4 +1,4 @@
-FROM python:3.8-slim AS builder
+FROM python:3-slim AS builder
 ADD . /app
 WORKDIR /app
 
@@ -8,8 +8,7 @@ RUN pip install --target=/app -r ./requirements.txt
 FROM gcr.io/distroless/python3-debian10
 
 COPY --from=builder /app /app
-COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/.
 
 WORKDIR /app
-ENV PYTHONPATH /usr/local/lib/python3.8/site-packages
+ENV PYTHONPATH /app
 CMD ["/app/run.py"]
