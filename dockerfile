@@ -1,8 +1,10 @@
-FROM python:3.8-slim
-
-RUN mkdir /app
+FROM python:3.8-slim AS builder
+ADD . /app
 WORKDIR /app
-ADD . /app/
-RUN pip install -r requirements.txt
 
-CMD ["python", "run.py"]
+FROM gcr.io/distroless/python3-debian10
+COPY --from=builder /app /app
+WORKDIR /app
+RUN pip install -r requirements.txt
+ENV PYTHONPATH /app
+CMD ["/app/run.py"]

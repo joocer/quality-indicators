@@ -1,11 +1,6 @@
 name: 'Test Action'
 description: 'Does not do much'
 author: 'joocer'
-inputs:
-  path:
-    description: 'path for testing'
-    default: '**'
-    required: false
 runs:
   using: "docker"
   image: "dockerfile"
