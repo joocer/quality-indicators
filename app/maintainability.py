@@ -26,7 +26,8 @@ class MaintainabilityTest():
     def test(self):
 
         file_list = glob.iglob('./**/*.py', recursive=True)
-        all_okay = True
+        failed_tests = 0
+        results = []
 
         for item in file_list:
             if any([True for exclusion in EXCLUSIONS if item.startswith(exclusion)]):
@@ -39,10 +40,16 @@ class MaintainabilityTest():
 
             if code.startswith('#no-maintain-checks'):
                 logging.info(F"{item:20} {maintainability_index:.2f} - skipped")
+                results.append('SKIPPED')
                 continue
 
             if maintainability_index <= LIMIT:
                 all_okay = False
-                logging.info(F"{item:20} {maintainability_index:.2f} - below {LIMIT}")
+                results.append('FAILED')
+                logging.error(F"{item:20} {maintainability_index:.2f} - below {LIMIT}")
+            else:
+                results.append('PASSED')
 
-        return all_okay
+        logging.error(F"MAINTAINABILITY INDEX: {results.count('PASSED')} passed, {results.count('FAILED')} failed, {results.count('SKIPPED')} skipped")
+
+        return results.count('FAILED') > 0

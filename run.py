@@ -13,7 +13,7 @@ results = []
 results.append(MaintainabilityTest().test())
 
 if not all(results):
-    logging.error('Tests failed')
+    logging.error('FAILURE')
     sys.exit(1)
 
-logging.info('Tests passed')
+logging.info('PASS')
