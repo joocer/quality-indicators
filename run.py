@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
 import sys
+from app.maintainability import MaintainabilityTest
 
-print("I RAN THE ACTION!")
-print(sys.argv)
+results = []
+results.append(MaintainabilityTest().test())
+
+if not all(results):
+    sys.exit(1)
