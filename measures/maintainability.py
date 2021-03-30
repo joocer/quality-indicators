@@ -4,19 +4,22 @@ Maintainability Index Tester
 Uses radon to calculate Maintainability Index
 (see: https://radon.readthedocs.io/en/latest/intro.html)
 
-Tools & Tests are excluded, as well as as there being an option to add a flag
-to the file to exclude spefific files.
+
+Files in /tests/ folder are excluded, as well as as there being an option to
+add a flag to the file to exclude specific files.
 
 Radon itself will A grade for maintainability for scores 100 to 20, this
-script sets the bar at 65.
+script sets the bar at 50.
 """
 import radon.metrics
 import logging
 import glob
 import sys
 
-EXCLUSIONS = ['/tests/']
-LIMIT = 65
+logger = logging.getLogger("measures")
+
+EXCLUSIONS = ['./tests/']
+LIMIT = 50
 
 class MaintainabilityTest():
 
@@ -26,7 +29,6 @@ class MaintainabilityTest():
     def test(self):
 
         file_list = glob.iglob('./**/*.py', recursive=True)
-        failed_tests = 0
         results = []
 
         for item in file_list:
@@ -39,17 +41,16 @@ class MaintainabilityTest():
             maintainability_index = radon.metrics.mi_visit(code, True)
 
             if code.startswith('#no-maintain-checks'):
-                logging.info(F"{item:20} {maintainability_index:.2f} - skipped")
+                logger.info(F"{item:20} {maintainability_index:.2f} - skipped")
                 results.append('SKIPPED')
                 continue
 
             if maintainability_index <= LIMIT:
-                all_okay = False
                 results.append('FAILED')
-                logging.error(F"{item:20} {maintainability_index:.2f} - below {LIMIT}")
+                logger.error(F"{item:20} {maintainability_index:.2f} - below {LIMIT}")
             else:
                 results.append('PASSED')
 
-        logging.error(F"MAINTAINABILITY INDEX: {results.count('PASSED')} passed, {results.count('FAILED')} failed, {results.count('SKIPPED')} skipped")
+        logger.info(F"MAINTAINABILITY INDEX: {results.count('PASSED')} passed, {results.count('FAILED')} failed, {results.count('SKIPPED')} skipped")
 
-        return results.count('FAILED') > 0
+        return results.count('FAILED') == 0

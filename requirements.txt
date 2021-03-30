@@ -1,1 +1,4 @@
 radon
+requests
+packaging
+setuptools
