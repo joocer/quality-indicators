@@ -51,6 +51,6 @@ class MaintainabilityTest():
             else:
                 results.append('PASSED')
 
-        logger.info(F"MAINTAINABILITY INDEX: {results.count('PASSED')} passed, {results.count('FAILED')} failed, {results.count('SKIPPED')} skipped")
+        logger.info(F"MAINTAINABILITY INDEX: \033[0;32m{results.count('PASSED')} passed\033[0m, \033[0;31m{results.count('FAILED')} failed\033[0m, \033[0;36m{results.count('SKIPPED')} skipped\033[0m")
 
         return results.count('FAILED') == 0

@@ -108,6 +108,11 @@ def get_package_summary(package=None,
 
     return result
 
+STYLES = {
+    'STALE':      '\033[0;33mSTALE     \033[0m',
+    'VULNERABLE': '\033[0;31mVULNERABLE\033[0m'
+}
+
 class CurrencyTest():
 
     def __init__(self):
@@ -126,17 +131,20 @@ class CurrencyTest():
 
             results.append(package_result['state'])
             if package_result['state'] != 'OKAY':
-                logger.info(F"{package_result['package']:20}  {package_result['state']:10} found: {package_result['installed_version']:10} latest: {package_result['latest_version']}")
+                logger.info(F"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:10} latest: {package_result['latest_version']}")
 
-        logger.info(F"CURRENCY: {results.count('VULNERABLE')} vulnerable, {results.count('STALE')} stale, {results.count('UNKNOWN')} unknown, {results.count('OKAY')} okay")
+        logger.info(F"CURRENCY: \033[0;31m{results.count('VULNERABLE')} vulnerable\033[0m, \033[0;33m{results.count('STALE')} stale\033[0m, \033[0;36m{results.count('UNKNOWN')} unknown\033[0m, \033[0;32m{results.count('OKAY')} okay\033[0m")
 
         total_results = len(results)
         if results.count('VULNERABLE') > 0:
-            logger.error('MORE THAN ZERO COMPONENTS WITH SECURITY WEAKNESSES')
+            logger.error('\033[0;31m✘\033[0m MORE THAN ZERO COMPONENTS WITH SECURITY WEAKNESSES')
             return False
 
         if results.count('STALE') > (total_results * 0.2):
-            logger.error('MORE THAN 20% OF COMPONENTS ARE STALE')
+            logger.error('\033[0;31m✘\033[0m MORE THAN 20% OF COMPONENTS ARE STALE')
             return False
 
         return True
+
+if __name__ == "__main__":
+    CurrencyTest().test()
