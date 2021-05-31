@@ -24,13 +24,10 @@ version available on pypi and components with vulnerabilities from data
 from pyup.
 """
 
-import pkg_resources
-import requests
+import pkg_resources  # type:ignore
+import requests  # type:ignore
 import logging
-import json
-import sys
-from packaging import version
-from pkg_resources import parse_version
+from pkg_resources import parse_version  # type:ignore
 
 logger = logging.getLogger("measures")
 
