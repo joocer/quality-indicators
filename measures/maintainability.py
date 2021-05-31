@@ -14,7 +14,6 @@ script sets the bar at 50.
 import radon.metrics
 import logging
 import glob
-import sys
 
 logger = logging.getLogger("measures")
 
@@ -40,17 +39,20 @@ class MaintainabilityTest():
 
             maintainability_index = radon.metrics.mi_visit(code, True)
 
-            if code.startswith('#no-maintain-checks'):
-                logger.info(F"{item:20} {maintainability_index:.2f} - skipped")
+            if code.startswith('#no-maintain-checks') or code.startswith('# no-maintain-checks'):
+                logger.info(F"{item:20} {maintainability_index:.2f} - \033[0;36mskipped\033[0m")
                 results.append('SKIPPED')
                 continue
 
             if maintainability_index <= LIMIT:
                 results.append('FAILED')
-                logger.error(F"{item:20} {maintainability_index:.2f} - below {LIMIT}")
+                logger.error(F"{item:20} {maintainability_index:.2f} - \033[0;31mbelow {LIMIT}\033[0m")
             else:
                 results.append('PASSED')
 
         logger.info(F"MAINTAINABILITY INDEX: \033[0;32m{results.count('PASSED')} passed\033[0m, \033[0;31m{results.count('FAILED')} failed\033[0m, \033[0;36m{results.count('SKIPPED')} skipped\033[0m")
 
         return results.count('FAILED') == 0
+
+if __name__ == "__main__":
+    MaintainabilityTest().test()
