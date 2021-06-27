@@ -27,9 +27,11 @@ from pyup.
 import pkg_resources  # type:ignore
 import requests  # type:ignore
 import logging
+import json
 from pkg_resources import parse_version  # type:ignore
 
 logger = logging.getLogger("measures")
+logger.setLevel(10)
 
 COMPARATORS = {
     '<':  lambda x, y: x < y,
@@ -50,6 +52,19 @@ def get_known_vulns():
         return data
     except:
         return 'unknown'
+
+def search_osv(library, version):
+    """
+    https://github.com/pypa/advisory-db
+    """
+    try:
+        url = "https://api.osv.dev/v1/query"
+        data = {"version": version, "package": {"name": library, "ecosystem": "PyPI"}}
+        resp = requests.post(url=url, data=json.dumps(data))
+        return resp.content
+    except Exception as e:
+        return b'{}'
+
 
 def get_latest_version(package_name):
     try:
@@ -90,6 +105,14 @@ def get_package_summary(package=None,
         else:
             result['state'] = "UNKNOWN"
 
+    osv = search_osv(package, result['installed_version'])
+    osv_dict = json.loads(osv)
+    if 'vulns' in osv_dict:
+        result['state'] = "VULNERABLE"
+        ids = result.get('ids') or []
+        ids.append(osv_dict['vulns'][0]['id'])
+        result['ids'] = ids
+
     if vuln_details:
         for i in vuln_details:
 
@@ -100,14 +123,17 @@ def get_package_summary(package=None,
 
                     if compare_versions(versions[0], installed_version) and compare_versions(versions[1], installed_version):
                         result['state'] = "VULNERABLE"
-                        result['cve'] = i.get('cve')
+                        ids = result.get('ids') or []
+                        ids.append(i.get('cve'))
+                        result['ids'] = ids
                         result['reference'] = i.get('id')
 
     return result
 
 STYLES = {
     'STALE':      '\033[0;33mSTALE     \033[0m',
-    'VULNERABLE': '\033[0;31mVULNERABLE\033[0m'
+    'VULNERABLE': '\033[0;31mVULNERABLE\033[0m',
+    'OKAY':       '\033[0;32mOKAY      \033[0m',
 }
 
 class CurrencyTest():
@@ -128,7 +154,7 @@ class CurrencyTest():
 
             results.append(package_result['state'])
             if package_result['state'] != 'OKAY':
-                logger.info(F"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:10} latest: {package_result['latest_version']}")
+                logger.info(F"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:12} latest: {package_result['latest_version']:12} {package_result.get('ids')}")
 
         logger.info(F"CURRENCY: \033[0;31m{results.count('VULNERABLE')} vulnerable\033[0m, \033[0;33m{results.count('STALE')} stale\033[0m, \033[0;36m{results.count('UNKNOWN')} unknown\033[0m, \033[0;32m{results.count('OKAY')} okay\033[0m")
 
@@ -144,4 +170,15 @@ class CurrencyTest():
         return True
 
 if __name__ == "__main__":
-    CurrencyTest().test()
+    #CurrencyTest().test()
+
+    
+    result = {}
+    osv = search_osv("rsa", "4.7.2")
+    osv_dict = json.loads(osv)
+    if 'vulns' in osv_dict:
+        result['state'] = "VULNERABLE"
+        ids = result.get('ids') or []
+        ids.append(osv_dict['vulns'][0]['id'])
+        result['ids'] = ids
+    print(result)
