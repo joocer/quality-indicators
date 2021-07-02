@@ -24,26 +24,30 @@ version available on pypi and components with vulnerabilities from data
 from pyup.
 """
 
-import pkg_resources  # type:ignore
+import json
 import requests  # type:ignore
 import logging
-import json
+import operator
+import pkg_resources  # type:ignore
 from pkg_resources import parse_version  # type:ignore
 
 logger = logging.getLogger("measures")
 logger.setLevel(10)
 
 COMPARATORS = {
-    '<':  lambda x, y: x < y,
-    '<=': lambda x, y: x <= y,
-    '>':  lambda x, y: x > y,
-    '>=': lambda x, y: x >= y,
-    '=':  lambda x, y: x == y
+    '<':  operator.lt,
+    '<=': operator.le,
+    '>':  operator.gt,
+    '>=': operator.ge,
+    '=':  operator.eq
 }
 
 def get_known_vulns():
     """
     Look up known vulns from PyUp.io
+
+    There is a lag in this data being known and made available, anything
+    from this dataset should have already been fixed.
     """
     try:
         url = "https://raw.githubusercontent.com/pyupio/safety-db/master/data/insecure_full.json"
@@ -110,7 +114,10 @@ def get_package_summary(package=None,
     if 'vulns' in osv_dict:
         result['state'] = "VULNERABLE"
         ids = result.get('ids') or []
-        ids.append(osv_dict['vulns'][0]['id'])
+        for vuln in osv_dict['vulns']:
+            ids.append(vuln['id'])
+            for alias in vuln['aliases']:
+                ids.append(alias)
         result['ids'] = ids
 
     if vuln_details:
@@ -131,9 +138,10 @@ def get_package_summary(package=None,
     return result
 
 STYLES = {
-    'STALE':      '\033[0;33mSTALE     \033[0m',
-    'VULNERABLE': '\033[0;31mVULNERABLE\033[0m',
-    'OKAY':       '\033[0;32mOKAY      \033[0m',
+    'STALE':       '\033[0;33mSTALE      \033[0m',
+    'VULNERABLE':  '\033[0;31mVULNERABLE \033[0m',
+    'NO PATCH':    '\033[0;35mNO PATCH   \033[0m',
+    'OKAY':        '\033[0;32mOKAY       \033[0m',
 }
 
 class CurrencyTest():
@@ -152,18 +160,31 @@ class CurrencyTest():
                         installed_version=package.version,
                         vuln_details=known_vulns.get(package.project_name))
 
+            if package_result['state'] == 'VULNERABLE':
+                if package_result['installed_version'] == package_result['latest_version']:
+                    package_result['state'] = 'NO PATCH'
+
             results.append(package_result['state'])
             if package_result['state'] != 'OKAY':
-                logger.info(F"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:12} latest: {package_result['latest_version']:12} {package_result.get('ids')}")
+                logger.info(F"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:12} latest: {package_result['latest_version']:12} {package_result.get('ids', '')}")
 
-        logger.info(F"CURRENCY: \033[0;31m{results.count('VULNERABLE')} vulnerable\033[0m, \033[0;33m{results.count('STALE')} stale\033[0m, \033[0;36m{results.count('UNKNOWN')} unknown\033[0m, \033[0;32m{results.count('OKAY')} okay\033[0m")
-
+        num_stale = results.count('STALE') + results.count('VULNERABLE')
+        num_vuln  = results.count('VULNERABLE') + results.count('NO PATCH')
         total_results = len(results)
+
+        msg = "CURRENCY: "
+        msg += f"\033[0;32m{results.count('OKAY')} okay\033[0m, "
+        msg += f"\033[0;31m{num_vuln} vulnerable ({100 * num_vuln // total_results}%)\033[0m, "
+        msg += f"\033[0;33m{num_stale} stale ({100 * num_stale // total_results}%)\033[0m, "
+        msg += f"\033[0;36m{results.count('UNKNOWN')} unknown\033[0m"
+
+        logger.info(msg)
+
         if results.count('VULNERABLE') > 0:
-            logger.error('\033[0;31m✘\033[0m MORE THAN ZERO COMPONENTS WITH SECURITY WEAKNESSES')
+            logger.error('\033[0;31m✘\033[0m MORE THAN ZERO UPGRADABLE COMPONENTS WITH SECURITY WEAKNESSES')
             return False
 
-        if results.count('STALE') > (total_results * 0.2):
+        if num_stale > (total_results * 0.2):
             logger.error('\033[0;31m✘\033[0m MORE THAN 20% OF COMPONENTS ARE STALE')
             return False
 
@@ -177,8 +198,12 @@ if __name__ == "__main__":
     osv = search_osv("rsa", "4.7.2")
     osv_dict = json.loads(osv)
     if 'vulns' in osv_dict:
+        print(json.dumps(osv_dict))
         result['state'] = "VULNERABLE"
         ids = result.get('ids') or []
-        ids.append(osv_dict['vulns'][0]['id'])
+        for vuln in osv_dict['vulns']:
+            ids.append(vuln['id'])
+            for alias in vuln['aliases']:
+                ids.append(alias)
         result['ids'] = ids
     print(result)
