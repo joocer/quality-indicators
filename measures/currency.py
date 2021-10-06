@@ -35,12 +35,13 @@ logger = logging.getLogger("measures")
 logger.setLevel(10)
 
 COMPARATORS = {
-    '<':  operator.lt,
-    '<=': operator.le,
-    '>':  operator.gt,
-    '>=': operator.ge,
-    '=':  operator.eq
+    "<": operator.lt,
+    "<=": operator.le,
+    ">": operator.gt,
+    ">=": operator.ge,
+    "=": operator.eq,
 }
+
 
 def get_known_vulns():
     """
@@ -55,7 +56,8 @@ def get_known_vulns():
         data = resp.json()
         return data
     except:
-        return 'unknown'
+        return "unknown"
+
 
 def search_osv(library, version):
     """
@@ -67,7 +69,7 @@ def search_osv(library, version):
         resp = requests.post(url=url, data=json.dumps(data))
         return resp.content
     except Exception as e:
-        return b'{}'
+        return b"{}"
 
 
 def get_latest_version(package_name):
@@ -75,13 +77,14 @@ def get_latest_version(package_name):
         url = "https://pypi.org/pypi/{}/json".format(package_name)
         resp = requests.get(url)
         data = resp.json()
-        return (data.get('info').get('release_url').split('/')[-2])
+        return data.get("info").get("release_url").split("/")[-2]
     except:
-        return 'unknown'
+        return "unknown"
+
 
 def compare_versions(version_a, version_b):
     # default to equals
-    operator = COMPARATORS['=']
+    operator = COMPARATORS["="]
 
     # find if it's a different operator
     find_operator = [c for c in COMPARATORS if version_a.startswith(c)]
@@ -93,59 +96,60 @@ def compare_versions(version_a, version_b):
     return operator(parse_version(version_b), parse_version(version_a))
 
 
-def get_package_summary(package=None,
-                installed_version=None,
-                vuln_details={}):
+def get_package_summary(package=None, installed_version=None, vuln_details={}):
 
-    result = { 
+    result = {
         "package": package,
         "installed_version": installed_version,
-        "state": "OKAY"
+        "state": "OKAY",
     }
-    result['latest_version'] = get_latest_version(package_name=package)
-    if result['latest_version'] != result['installed_version']:
-        if result['latest_version'] != 'unknown':
-            result['state'] = "STALE"
+    result["latest_version"] = get_latest_version(package_name=package)
+    if result["latest_version"] != result["installed_version"]:
+        if result["latest_version"] != "unknown":
+            result["state"] = "STALE"
         else:
-            result['state'] = "UNKNOWN"
+            result["state"] = "UNKNOWN"
 
-    osv = search_osv(package, result['installed_version'])
+    osv = search_osv(package, result["installed_version"])
     osv_dict = json.loads(osv)
-    if 'vulns' in osv_dict:
-        result['state'] = "VULNERABLE"
-        ids = result.get('ids') or []
-        for vuln in osv_dict['vulns']:
-            ids.append(vuln['id'])
-            for alias in vuln['aliases']:
+    if "vulns" in osv_dict:
+        result["state"] = "VULNERABLE"
+        ids = result.get("ids") or []
+        for vuln in osv_dict["vulns"]:
+            ids.append(vuln["id"])
+            for alias in vuln["aliases"]:
                 ids.append(alias)
-        result['ids'] = ids
+        result["ids"] = ids
 
     if vuln_details:
         for i in vuln_details:
 
-                for version_pairs in i['specs']:
-                    versions = version_pairs.split(',')
-                    if len(versions) == 1:
-                        versions = ['>0'] + versions
+            for version_pairs in i["specs"]:
+                versions = version_pairs.split(",")
+                if len(versions) == 1:
+                    versions = [">0"] + versions
 
-                    if compare_versions(versions[0], installed_version) and compare_versions(versions[1], installed_version):
-                        result['state'] = "VULNERABLE"
-                        ids = result.get('ids') or []
-                        ids.append(i.get('cve'))
-                        result['ids'] = ids
-                        result['reference'] = i.get('id')
+                if compare_versions(
+                    versions[0], installed_version
+                ) and compare_versions(versions[1], installed_version):
+                    result["state"] = "VULNERABLE"
+                    ids = result.get("ids") or []
+                    ids.append(i.get("cve"))
+                    result["ids"] = ids
+                    result["reference"] = i.get("id")
 
     return result
 
+
 STYLES = {
-    'STALE':       '\033[0;33mSTALE      \033[0m',
-    'VULNERABLE':  '\033[0;31mVULNERABLE \033[0m',
-    'NO PATCH':    '\033[0;35mNO PATCH   \033[0m',
-    'OKAY':        '\033[0;32mOKAY       \033[0m',
+    "STALE": "\033[0;33mSTALE      \033[0m",
+    "VULNERABLE": "\033[0;31mVULNERABLE \033[0m",
+    "NO PATCH": "\033[0;35mNO PATCH   \033[0m",
+    "OKAY": "\033[0;32mOKAY       \033[0m",
 }
 
-class CurrencyTest():
 
+class CurrencyTest:
     def __init__(self):
         pass
 
@@ -156,20 +160,26 @@ class CurrencyTest():
         known_vulns = get_known_vulns()
         for package in pkg_resources.working_set:
 
-            package_result = get_package_summary(package=package.project_name,
-                        installed_version=package.version,
-                        vuln_details=known_vulns.get(package.project_name))
+            package_result = get_package_summary(
+                package=package.project_name,
+                installed_version=package.version,
+                vuln_details=known_vulns.get(package.project_name),
+            )
 
-            if package_result['state'] == 'VULNERABLE':
-                if package_result['installed_version'] == package_result['latest_version']:
-                    package_result['state'] = 'NO PATCH'
+            if package_result["state"] == "VULNERABLE":
+                if (
+                    package_result["installed_version"]
+                    == package_result["latest_version"]
+                ):
+                    package_result["state"] = "NO PATCH"
 
-            results.append(package_result['state'])
-            if package_result['state'] != 'OKAY':
-                logger.info(F"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:12} latest: {package_result['latest_version']:12} {package_result.get('ids', '')}")
+            results.append(package_result["state"])
+            logger.info(
+                f"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:12} latest: {package_result['latest_version']:12} {package_result.get('ids', '')}"
+            )
 
-        num_stale = results.count('STALE') + results.count('VULNERABLE')
-        num_vuln  = results.count('VULNERABLE') + results.count('NO PATCH')
+        num_stale = results.count("STALE") + results.count("VULNERABLE")
+        num_vuln = results.count("VULNERABLE") + results.count("NO PATCH")
         total_results = len(results)
 
         msg = "CURRENCY: "
@@ -180,30 +190,32 @@ class CurrencyTest():
 
         logger.info(msg)
 
-        if results.count('VULNERABLE') > 0:
-            logger.error('\033[0;31m✘\033[0m MORE THAN ZERO UPGRADABLE COMPONENTS WITH SECURITY WEAKNESSES')
+        if results.count("VULNERABLE") > 0:
+            logger.error(
+                "\033[0;31m✘\033[0m MORE THAN ZERO UPGRADABLE COMPONENTS WITH SECURITY WEAKNESSES"
+            )
             return False
 
         if num_stale > (total_results * 0.2):
-            logger.error('\033[0;31m✘\033[0m MORE THAN 20% OF COMPONENTS ARE STALE')
+            logger.error("\033[0;31m✘\033[0m MORE THAN 20% OF COMPONENTS ARE STALE")
             return False
 
         return True
 
-if __name__ == "__main__":
-    #CurrencyTest().test()
 
-    
+if __name__ == "__main__":
+    # CurrencyTest().test()
+
     result = {}
     osv = search_osv("rsa", "4.7.2")
     osv_dict = json.loads(osv)
-    if 'vulns' in osv_dict:
+    if "vulns" in osv_dict:
         print(json.dumps(osv_dict))
-        result['state'] = "VULNERABLE"
-        ids = result.get('ids') or []
-        for vuln in osv_dict['vulns']:
-            ids.append(vuln['id'])
-            for alias in vuln['aliases']:
+        result["state"] = "VULNERABLE"
+        ids = result.get("ids") or []
+        for vuln in osv_dict["vulns"]:
+            ids.append(vuln["id"])
+            for alias in vuln["aliases"]:
                 ids.append(alias)
-        result['ids'] = ids
+        result["ids"] = ids
     print(result)

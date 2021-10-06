@@ -17,42 +17,51 @@ import glob
 
 logger = logging.getLogger("measures")
 
-EXCLUSIONS = ['./tests/']
+EXCLUSIONS = ["./tests/"]
 LIMIT = 50
 
-class MaintainabilityTest():
 
+class MaintainabilityTest:
     def __init__(self):
         pass
 
     def test(self):
 
-        file_list = glob.iglob('./**/*.py', recursive=True)
+        file_list = glob.iglob("./**/*.py", recursive=True)
         results = []
 
         for item in file_list:
             if any([True for exclusion in EXCLUSIONS if item.startswith(exclusion)]):
                 continue
 
-            with open(item, 'r', encoding='UTF8') as code_file:
+            with open(item, "r", encoding="UTF8") as code_file:
                 code = code_file.read()
 
             maintainability_index = radon.metrics.mi_visit(code=code, multi=True)
 
-            if code.startswith('#no-maintain-checks') or code.startswith('# no-maintain-checks'):
-                logger.info(F"{item:20} {maintainability_index:.2f} - \033[0;36mskipped\033[0m")
-                results.append('SKIPPED')
+            if code.startswith("#no-maintain-checks") or code.startswith(
+                "# no-maintain-checks"
+            ):
+                logger.info(
+                    f"{item:20} {maintainability_index:.2f} - \033[0;36mskipped\033[0m"
+                )
+                results.append("SKIPPED")
                 continue
 
             if maintainability_index <= LIMIT:
-                results.append('FAILED')
-                logger.error(F"{item:20} {maintainability_index:.2f} - \033[0;31mbelow {LIMIT}\033[0m")
+                results.append("FAILED")
+                logger.error(
+                    f"{item:20} {maintainability_index:.2f} - \033[0;31mbelow {LIMIT}\033[0m"
+                )
             else:
-                results.append('PASSED')
+                results.append("PASSED")
 
-        logger.info(F"MAINTAINABILITY INDEX: \033[0;32m{results.count('PASSED')} passed\033[0m, \033[0;31m{results.count('FAILED')} failed\033[0m, \033[0;36m{results.count('SKIPPED')} skipped\033[0m")
+        logger.info(
+            f"MAINTAINABILITY INDEX: \033[0;32m{results.count('PASSED')} passed\033[0m, \033[0;31m{results.count('FAILED')} failed\033[0m, \033[0;36m{results.count('SKIPPED')} skipped\033[0m"
+        )
 
-        return results.count('FAILED') == 0
+        return results.count("FAILED") == 0
+
 
 if __name__ == "__main__":
     MaintainabilityTest().test()
