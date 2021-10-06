@@ -165,8 +165,7 @@ class CurrencyTest():
                     package_result['state'] = 'NO PATCH'
 
             results.append(package_result['state'])
-            if package_result['state'] != 'OKAY':
-                logger.info(F"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:12} latest: {package_result['latest_version']:12} {package_result.get('ids', '')}")
+            logger.info(F"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:12} latest: {package_result['latest_version']:12} {package_result.get('ids', '')}")
 
         num_stale = results.count('STALE') + results.count('VULNERABLE')
         num_vuln  = results.count('VULNERABLE') + results.count('NO PATCH')
