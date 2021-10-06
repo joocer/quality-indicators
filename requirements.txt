@@ -2,4 +2,3 @@ radon
 requests
 packaging
 setuptools
-mabel
