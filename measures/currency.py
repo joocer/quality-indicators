@@ -3,7 +3,7 @@ bombast: currency checker
 
 https://github.com/joocer/bombast
 
-(C) 2021 Justin Joyce.
+(C) 2023 Justin Joyce.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -88,8 +88,8 @@ def compare_versions(version_a, version_b):
 
     # find if it's a different operator
     find_operator = [c for c in COMPARATORS if version_a.startswith(c)]
-    if len(find_operator):
-        s = find_operator[0]
+    if len(find_operator) > 0:
+        s = max(find_operator, key=len)
         operator = COMPARATORS[s]
         version_a = version_a.lstrip(s)
 
