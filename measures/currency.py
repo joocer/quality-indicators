@@ -21,7 +21,7 @@ limitations under the License.
 A simple script to determine the bill of materials in terms of installed
 pypi packages and then compare the installed version to the latest 
 version available on pypi and components with vulnerabilities from data
-from pyup.
+from pyup/osv.
 """
 
 import json
@@ -117,7 +117,7 @@ def get_package_summary(package=None, installed_version=None, vuln_details={}):
         ids = result.get("ids") or []
         for vuln in osv_dict["vulns"]:
             ids.append(vuln["id"])
-            for alias in vuln["aliases"]:
+            for alias in vuln.get("aliases", []):
                 ids.append(alias)
         result["ids"] = ids
 
@@ -155,6 +155,16 @@ class CurrencyTest:
 
     def test(self):
 
+        print("""
+       ___                 _               _   
+      / __\ ___  _ __ ___ | |__   __ _ ___| |_ 
+     /__\/// _ \| '_ ` _ \| '_ \ / _` / __| __|
+    / \/  | (_) | | | | | | |_) | (_| \__ | |_ 
+    \_____/\___/|_| |_| |_|_.__/ \__,_|___/\__|
+
+                             component                  result      found        latest       weaknesses
+=======================================================================================================================""")
+
         results = []
 
         known_vulns = get_known_vulns()
@@ -175,14 +185,14 @@ class CurrencyTest:
 
             results.append(package_result["state"])
             logger.info(
-                f"{package_result['package']:25}  {STYLES[package_result['state']]} found: {package_result['installed_version']:12} latest: {package_result['latest_version']:12} {package_result.get('ids', '')}"
+                f"{package_result['package']:25}  {STYLES[package_result['state']]} {package_result['installed_version']:12} {package_result['latest_version']:12} {package_result.get('ids', '')}"
             )
 
         num_stale = results.count("STALE") + results.count("VULNERABLE")
         num_vuln = results.count("VULNERABLE") + results.count("NO PATCH")
         total_results = len(results)
 
-        msg = "CURRENCY: "
+        msg = ""
         msg += f"\033[0;32m{results.count('OKAY')} okay\033[0m, "
         msg += f"\033[0;31m{num_vuln} vulnerable ({100 * num_vuln // total_results}%)\033[0m, "
         msg += f"\033[0;33m{num_stale} stale ({100 * num_stale // total_results}%)\033[0m, "
