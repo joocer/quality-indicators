@@ -26,7 +26,6 @@ class MaintainabilityTest:
         pass
 
     def test(self):
-
         file_list = glob.iglob("./**/*.py", recursive=True)
         results = []
 
