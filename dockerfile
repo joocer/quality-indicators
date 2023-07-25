@@ -1,11 +1,11 @@
-FROM launcher.gcr.io/google/debian11 AS builder
+FROM python:3-slim AS builder
 ADD . /app
 WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --target=/app -r ./requirements.txt
 
-FROM gcr.io/distroless/python3-debian11
+FROM gcr.io/distroless/python3-debian10
 
 COPY --from=builder /app /app
 
